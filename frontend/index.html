@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobLens — LinkedIn Job Insights</title>
+  <meta name="description" content="Explore 31,000+ LinkedIn job postings with AI-powered search, clustering, and trend analysis." />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo">
+        <div class="logo-mark">JL</div>
+        JobLens
+      </div>
+      <div class="nav-pills" id="navPills">
+        <span class="nav-pill"><strong id="nav-total">—</strong> jobs</span>
+        <span class="nav-pill"><strong id="nav-hiring">—</strong> hiring</span>
+      </div>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+      <div class="user-chip" id="userChip">
+        <span class="user-chip-name" id="userName">User</span>
+        <div class="user-chip-avatar" id="userAvatar">?</div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">Log out</button>
+    </div>
+  </nav>
+
+  <!-- Page Tabs -->
+  <div class="container">
+    <div class="page-tabs">
+      <button class="page-tab active" id="tabJobs" onclick="switchPage('jobs')">Jobs</button>
+      <button class="page-tab" id="tabAI" onclick="switchPage('ai')">AI Insights</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ JOBS PAGE ═══════════════ -->
+  <div id="pageJobs">
+    <div class="container">
+      <div class="page-header">
+        <h1>Find your next opportunity</h1>
+        <p>Browse and filter thousands of LinkedIn job postings by role, location, or hiring status.</p>
+      </div>
+    </div>
+    <div class="container">
+      <div class="search-row">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="searchInput" placeholder="Search by job title or company..." autocomplete="off" />
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="stat-strip" id="statsGrid">
+        <div class="stat-item">
+          <div class="stat-item-value" id="statJobs">0</div>
+          <div class="stat-item-label">Total jobs</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-item-value" id="statHiring">0</div>
+          <div class="stat-item-label">Actively hiring</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-item-value" id="statCompanies">0</div>
+          <div class="stat-item-label">Companies</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-item-value" id="statLocations">0</div>
+          <div class="stat-item-label">Locations</div>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="filters-bar">
+        <label>Filters:</label>
+        <select id="filterLocation" class="filter-select"><option value="">Location</option></select>
+        <select id="filterFunction" class="filter-select"><option value="">Function</option></select>
+        <select id="filterSeniority" class="filter-select"><option value="">Seniority</option></select>
+        <select id="filterEmployment" class="filter-select"><option value="">Type</option></select>
+        <select id="filterHiring" class="filter-select"><option value="">Status</option></select>
+        <button class="filter-clear" id="clearFilters">Clear all</button>
+      </div>
+    </div>
+    <div class="container">
+      <div class="results-bar">
+        <div class="results-count" id="resultsCount">Loading...</div>
+      </div>
+      <div class="jobs-list" id="jobsGrid"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ AI INSIGHTS PAGE ═══════════════ -->
+  <div id="pageAI" style="display:none">
+    <div class="container">
+      <div class="page-header">
+        <h1>AI-Powered Insights</h1>
+        <p>Machine learning models trained on the job corpus: semantic search, clustering, forecasting, and resume matching.</p>
+      </div>
+    </div>
+
+    <!-- Semantic Search -->
+    <div class="container">
+      <div class="ml-section">
+        <div class="ml-section-head">
+          <h2>Semantic Search</h2>
+          <span class="ml-badge">TF-IDF + Cosine Similarity</span>
+        </div>
+        <p class="ml-desc">Unlike keyword search, this finds jobs by meaning. Try "ML engineer", "frontend developer", or "business strategy".</p>
+        <div class="ml-input-row">
+          <div class="search-box" style="flex:1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="mlSearchInput" placeholder="e.g. machine learning engineer..." />
+          </div>
+          <button class="ml-btn" onclick="runSemanticSearch()">Search</button>
+        </div>
+        <div id="mlSearchResults" class="ml-results"><p class="ml-hint">Enter a query above.</p></div>
+      </div>
+    </div>
+
+    <!-- Clustering -->
+    <div class="container">
+      <div class="ml-section">
+        <div class="ml-section-head">
+          <h2>Job Clusters</h2>
+          <span class="ml-badge">K-Means + PCA</span>
+        </div>
+        <p class="ml-desc">3,000 jobs grouped into clusters using unsupervised learning. Each dot is a job; color = cluster. Hover to see details.</p>
+        <div class="ml-chart-wrap">
+          <canvas id="clusterCanvas"></canvas>
+        </div>
+        <div id="clusterInfo"><p class="ml-hint">Loading clusters...</p></div>
+      </div>
+    </div>
+
+    <!-- Trend Forecasting -->
+    <div class="container">
+      <div class="ml-section">
+        <div class="ml-section-head">
+          <h2>Trend Forecasting</h2>
+          <span class="ml-badge">Polynomial Regression</span>
+        </div>
+        <p class="ml-desc">Monthly job posting volume with trend line and 6-month forecast. Filter by role to see demand for specific positions.</p>
+        <div class="ml-input-row">
+          <input type="text" class="ml-text-input" id="trendRoleInput" placeholder="Filter by role (optional), e.g. Data Scientist" />
+          <button class="ml-btn" onclick="loadTrends()">Analyze</button>
+        </div>
+        <div class="ml-chart-wrap">
+          <canvas id="trendCanvas"></canvas>
+        </div>
+        <div id="trendInfo"><p class="ml-hint">Click Analyze to load trends.</p></div>
+      </div>
+    </div>
+
+    <!-- Resume Matching -->
+    <div class="container">
+      <div class="ml-section">
+        <div class="ml-section-head">
+          <h2>Resume-to-Job Matching</h2>
+          <span class="ml-badge">TF-IDF + Cosine Similarity</span>
+        </div>
+        <p class="ml-desc">Paste your resume or key skills below and find the most relevant jobs ranked by match percentage.</p>
+        <textarea id="resumeTextarea" class="ml-textarea" rows="6" placeholder="Paste your resume text, skills, or experience here...&#10;&#10;Example: Python, Machine Learning, TensorFlow, Data Analysis, SQL, AWS, Deep Learning, NLP, Computer Vision, 3 years experience"></textarea>
+        <button class="ml-btn" onclick="runResumeMatch()" style="margin-top:10px">Find Matching Jobs</button>
+        <div id="resumeResults" class="ml-results"><p class="ml-hint">Paste your resume above and click "Find Matching Jobs".</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">JobLens &middot; LinkedIn job insights platform</div>
+  </footer>
+
+  <script src="app.js"></script>
+  <script src="ml.js"></script>
+</body>
+</html>

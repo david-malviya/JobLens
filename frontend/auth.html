@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobLens — Sign In</title>
+  <meta name="description" content="Sign in or create an account to access LinkedIn Job Insights." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Theme toggle -->
+  <button class="theme-toggle auth-theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="logo-mark">JL</div>
+        <h2>Welcome to JobLens</h2>
+        <p>Sign in to explore job insights</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Sign In</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Create Account</button>
+      </div>
+
+      <!-- Messages -->
+      <div class="auth-message" id="authMessage"></div>
+
+      <!-- Login -->
+      <form class="auth-form" id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" placeholder="Your password" required minlength="6" autocomplete="current-password" />
+            <button type="button" class="toggle-pw" onclick="togglePw('loginPassword', this)">👁</button>
+          </div>
+        </div>
+        <button type="submit" class="auth-submit" id="loginBtn">
+          <span class="btn-text">Sign In</span>
+          <span class="btn-loader" style="display:none"></span>
+        </button>
+      </form>
+
+      <!-- Register -->
+      <form class="auth-form" id="registerForm" style="display:none" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label for="regName">Full Name</label>
+          <input type="text" id="regName" placeholder="John Doe" required minlength="2" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Email</label>
+          <input type="email" id="regEmail" placeholder="you@example.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="regPassword" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password" />
+            <button type="button" class="toggle-pw" onclick="togglePw('regPassword', this)">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="regConfirm">Confirm Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="regConfirm" placeholder="Re-enter password" required minlength="6" autocomplete="new-password" />
+            <button type="button" class="toggle-pw" onclick="togglePw('regConfirm', this)">👁</button>
+          </div>
+        </div>
+        <button type="submit" class="auth-submit" id="registerBtn">
+          <span class="btn-text">Create Account</span>
+          <span class="btn-loader" style="display:none"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+</body>
+</html>

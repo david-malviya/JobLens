@@ -1,0 +1,11 @@
+{
+  "name": "joblens-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for JobLens platform",
+  "scripts": {
+    "dev": "live-server --port=8080 --ignore=node_modules --wait=1000"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
