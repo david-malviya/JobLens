@@ -18,6 +18,19 @@
 *   **Machine Learning:** Scikit-Learn, Pandas, NumPy
 *   **Data:** Cleaned and processed LinkedIn job postings dataset
 
+## The Dataset
+The dataset consists of one primary sheet. Each record in the dataset represents a single job posting, and the attributes captured include:
+
+*   **job_title:** The job title for the position being advertised (e.g., "Software Engineer," "Marketing Manager").
+*   **company_name:** The name of the company that is advertising the job (e.g., "Google," "Microsoft").
+*   **location:** The geographic location of the job posting, including city, state, and country.
+*   **hiring_status:** The current hiring status indicating whether the position is currently open or closed.
+*   **date:** The date on which the job posting was created or last updated.
+*   **seniority_level:** The level of seniority of the position (e.g., "Entry-Level," "Senior-Level").
+*   **job_function:** The functional area of the job being advertised (e.g., "Marketing," "Engineering").
+*   **employment_type:** The type of employment being offered (e.g., "Full-Time," "Contract").
+*   **industry:** The industry of the company advertising the job (e.g., "Technology," "Healthcare").
+
 ## Getting Started
 
 ### Prerequisites
