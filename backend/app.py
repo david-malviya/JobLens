@@ -9,6 +9,9 @@ import json
 import datetime
 import functools
 
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 import bcrypt
 import jwt
 import pandas as pd
@@ -48,6 +51,14 @@ job_clusterer = JobClusterer(df, n_clusters=8, sample_size=3000)
 trend_forecaster = TrendForecaster(df)
 resume_matcher = ResumeJobMatcher(df)
 print("[INFO] All ML models initialized.")
+
+# ---------------------------------------------------------------------------
+# Initialize LLM Engine (Gemini)
+# ---------------------------------------------------------------------------
+from llm_engine import JobLensLLM
+
+LLM_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+joblens_llm = JobLensLLM(df, api_key=LLM_API_KEY, retriever=semantic_search)
 
 
 # ---------------------------------------------------------------------------
@@ -359,6 +370,10 @@ def get_filters():
 # ML Routes
 # ---------------------------------------------------------------------------
 
+@app.route("/api/debug-key", methods=["GET"])
+def debug_key():
+    return jsonify({"key": getattr(joblens_llm, "api_key", "UNKNOWN")})
+
 @app.route("/api/ml/semantic-search", methods=["POST"])
 @token_required
 def ml_semantic_search():
@@ -413,6 +428,49 @@ def ml_resume_match():
         "results": results,
         "total": len(results),
         "method": "TF-IDF + Cosine Similarity (Resume Matching)",
+    })
+
+
+# ---------------------------------------------------------------------------
+# LLM Routes (Gemini-powered chat)
+# ---------------------------------------------------------------------------
+
+@app.route("/api/llm/chat", methods=["POST"])
+@token_required
+def llm_chat():
+    """Chat with the AI about job data using Gemini."""
+    data = request.get_json()
+    if not data or not data.get("question"):
+        return jsonify({"error": "Question is required"}), 400
+
+    question = data["question"].strip()
+    chat_history = data.get("history", [])
+
+    result = joblens_llm.chat(question, chat_history=chat_history)
+    return jsonify(result)
+
+
+@app.route("/api/llm/set-key", methods=["POST"])
+@token_required
+def set_llm_key():
+    """Set or update the Gemini API key at runtime."""
+    global joblens_llm
+    data = request.get_json()
+    if not data or not data.get("api_key"):
+        return jsonify({"error": "api_key is required"}), 400
+
+    api_key = data["api_key"].strip()
+    joblens_llm = JobLensLLM(df, api_key=api_key, retriever=semantic_search)
+    return jsonify({"message": "API key updated and LLM re-initialized", "status": "success"})
+
+
+@app.route("/api/llm/status", methods=["GET"])
+@token_required
+def llm_status():
+    """Check if the LLM engine is configured and ready."""
+    return jsonify({
+        "ready": getattr(joblens_llm, "client", None) is not None,
+        "model": "grok" if getattr(joblens_llm, "client", None) else None,
     })
 
 

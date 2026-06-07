@@ -10,5 +10,77 @@
     "email": "david@gmail.com",
     "password": "$2b$12$c1qcwOTN5SIEdlXMvjDfyuqYbFmNFiS70KogA/uWcNtx.PavLiYdu",
     "created_at": "2026-05-14T17:57:33.905162"
+  },
+  "davidmalviya2004@gmail.com": {
+    "name": "David Malviya",
+    "email": "davidmalviya2004@gmail.com",
+    "password": "$2b$12$yClzL3F78/yB0WicOZDR4.1da2hSr8DmF6R0VL0Q3Do3.nP98Y0l6",
+    "created_at": "2026-05-25T17:24:03.193285"
+  },
+  "jugraj@gmail.com": {
+    "name": "jugraj",
+    "email": "jugraj@gmail.com",
+    "password": "$2b$12$JXz43cI8j4dgzcaCRZCJz.LzOBr9BZ3W1zTFjX2CUWdhBgfqtuKc2",
+    "created_at": "2026-06-06T16:41:24.495377"
+  },
+  "testbot@test.com": {
+    "name": "TestUser",
+    "email": "testbot@test.com",
+    "password": "$2b$12$D66liG3xV1xZOGjq4OIRgekC.2kbyz8WPDbAF.srp5B0nmmVNO0O.",
+    "created_at": "2026-06-07T03:36:40.514959"
+  },
+  "testbot2@test.com": {
+    "name": "TestUser2",
+    "email": "testbot2@test.com",
+    "password": "$2b$12$KDZdjFrxgCCv5GWGVsIiY.FQ5v9Lzo/WQROEVcDAxrmyOoerf5UDS",
+    "created_at": "2026-06-07T03:36:52.428495"
+  },
+  "bot3@test.com": {
+    "name": "Bot3",
+    "email": "bot3@test.com",
+    "password": "$2b$12$cZfcr4hQhoWXxV7Lrg8LvuDAcengBDgOkStvcsN3CAaTZU81ZuNgO",
+    "created_at": "2026-06-07T03:39:31.922870"
+  },
+  "finaltest@test.com": {
+    "name": "TestFinal",
+    "email": "finaltest@test.com",
+    "password": "$2b$12$q6vDUF0C9bHtSjOcj47Sy.Cl0JuBbtcu.xZzung5jJKnAQqaZ4yj.",
+    "created_at": "2026-06-07T03:44:44.980474"
+  },
+  "testllm@test.com": {
+    "name": "TestLLM",
+    "email": "testllm@test.com",
+    "password": "$2b$12$hg4V8/0RcuWNBesrsQGuJ.BDytP087.JXVzBlamJcSVzO0zqTk2Gi",
+    "created_at": "2026-06-07T03:55:30.226549"
+  },
+  "testgroq@test.com": {
+    "name": "TestGroq",
+    "email": "testgroq@test.com",
+    "password": "$2b$12$6pUAk/RJfpUt5l6rGsT0AuoHQuFybICm09bWPpm/ILnnKZJ7qOoAq",
+    "created_at": "2026-06-07T04:03:16.091723"
+  },
+  "testgroq2@test.com": {
+    "name": "TestGroq2",
+    "email": "testgroq2@test.com",
+    "password": "$2b$12$lC91BcYHWBtUvsX03V4aveP2/GlGLRGjQjOqO6fYqnkjvLGihx0IS",
+    "created_at": "2026-06-07T04:03:40.478214"
+  },
+  "testgroq3@test.com": {
+    "name": "TestGroq3",
+    "email": "testgroq3@test.com",
+    "password": "$2b$12$UC8iQqW8O9deGO1Tmp0.2uJ3GJaK318vkJike6d7dg/EKDmCyuBzG",
+    "created_at": "2026-06-07T04:04:55.177578"
+  },
+  "testgroq4@test.com": {
+    "name": "TestGroq4",
+    "email": "testgroq4@test.com",
+    "password": "$2b$12$J3pyoVqTDY1XmizH1ZzpW.gPbwVapWk8QsjtqnoyfyAtlkEOFUeOK",
+    "created_at": "2026-06-07T04:08:27.673848"
+  },
+  "testrag@test.com": {
+    "name": "TestRAG",
+    "email": "testrag@test.com",
+    "password": "$2b$12$zCj9dTpvE/p5cCaH5iWMOO0IPDIhwlgo20vhuCOATM9UpzYJqv2.e",
+    "created_at": "2026-06-07T04:27:48.037896"
   }
 }

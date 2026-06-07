@@ -212,15 +212,24 @@ function googleSearchLink(company) {
 
 // ── Page Tab Switching ──
 let aiLoaded = false;
+let chatLoaded = false;
 function switchPage(page) {
+  console.log("[App] switchPage:", page);
   $("pageJobs").style.display = page === "jobs" ? "block" : "none";
   $("pageAI").style.display = page === "ai" ? "block" : "none";
+  $("pageChat").style.display = page === "chat" ? "block" : "none";
   $("tabJobs").classList.toggle("active", page === "jobs");
   $("tabAI").classList.toggle("active", page === "ai");
+  $("tabChat").classList.toggle("active", page === "chat");
 
   if (page === "ai" && !aiLoaded) {
     aiLoaded = true;
-    loadClusters();
-    loadTrends();
+    try { loadClusters(); } catch (e) { console.error("[App] loadClusters error:", e); }
+    try { loadTrends(); } catch (e) { console.error("[App] loadTrends error:", e); }
+  }
+
+  if (page === "chat" && !chatLoaded) {
+    chatLoaded = true;
+    try { initLLMChat(); } catch (e) { console.error("[App] initLLMChat error:", e); }
   }
 }

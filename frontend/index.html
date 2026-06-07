@@ -35,6 +35,7 @@
     <div class="page-tabs">
       <button class="page-tab active" id="tabJobs" onclick="switchPage('jobs')">Jobs</button>
       <button class="page-tab" id="tabAI" onclick="switchPage('ai')">AI Insights</button>
+      <button class="page-tab" id="tabChat" onclick="switchPage('chat')">AI Chat ✨</button>
     </div>
   </div>
 
@@ -171,6 +172,109 @@
     </div>
   </div>
 
+  <!-- ═══════════════ AI CHAT PAGE ═══════════════ -->
+  <div id="pageChat" style="display:none">
+    <div class="container">
+      <div class="page-header" style="padding-bottom:16px">
+        <h1>Chat with JobLens AI</h1>
+        <p>Ask anything about the job dataset — powered by Grok.</p>
+      </div>
+    </div>
+    <div class="container">
+      <div class="chat-container">
+        <!-- Status & API Key -->
+        <div class="chat-header">
+          <div class="chat-header-left">
+            <div class="llm-model-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              Grok
+            </div>
+            <div class="llm-status llm-status-inactive" id="llmStatus">
+              <span class="llm-status-dot llm-dot-inactive"></span>
+              <span>Checking...</span>
+            </div>
+          </div>
+          <button class="chat-clear-btn" onclick="clearChat()" title="Clear chat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+            </svg>
+            Clear
+          </button>
+        </div>
+
+        <!-- API Key Input -->
+        <div class="llm-key-section" id="llmKeySection">
+          <div class="llm-key-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+            </svg>
+          </div>
+          <div class="llm-key-text">
+            <strong>Enter your Grok API key</strong>
+            <span>Your key is never stored — it stays in memory only for this session.</span>
+          </div>
+          <div class="llm-key-input-row">
+            <input type="password" id="geminiKeyInput" placeholder="gsk_..." class="llm-key-input" autocomplete="off" />
+            <button class="ml-btn" id="setKeyBtn" onclick="setGeminiKey()">Connect</button>
+          </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-message chat-bot">
+            <div class="chat-avatar chat-avatar-bot">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <div class="chat-bubble chat-bubble-bot">
+              <div class="chat-text">
+                <p>👋 <strong>Hello!</strong> I'm JobLens AI, powered by Grok.</p>
+                <p>I can analyze the <strong>31,000+ LinkedIn job postings</strong> in this dataset and answer your questions with data-driven insights.</p>
+                <p>Try asking me something like:</p>
+                <ul class="md-list">
+                  <li>What are the most in-demand job roles?</li>
+                  <li>Which companies are hiring the most?</li>
+                  <li>How does the job market look for data scientists?</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Questions -->
+        <div class="chat-quick">
+          <button class="quick-btn" onclick="askQuickQuestion('What are the top 10 most in-demand job roles?')">
+            🔥 Top job roles
+          </button>
+          <button class="quick-btn" onclick="askQuickQuestion('Which companies are hiring the most right now?')">
+            🏢 Top hiring companies
+          </button>
+          <button class="quick-btn" onclick="askQuickQuestion('Compare job opportunities in different locations')">
+            🌍 Location comparison
+          </button>
+          <button class="quick-btn" onclick="askQuickQuestion('What is the trend for software engineer roles?')">
+            📈 Engineer trends
+          </button>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-area">
+          <textarea id="chatInput" class="chat-input" rows="1" placeholder="Ask about jobs, trends, companies, salaries..."></textarea>
+          <button class="chat-send-btn" onclick="sendChatMessage()" title="Send message">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Loading -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
@@ -183,5 +287,6 @@
 
   <script src="app.js"></script>
   <script src="ml.js"></script>
+  <script src="llm_chat.js"></script>
 </body>
 </html>
