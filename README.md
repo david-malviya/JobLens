@@ -11,11 +11,13 @@
 *   **Job Clustering:** Uses **K-Means** and **PCA** (Principal Component Analysis) to group jobs into distinct clusters, helping you discover related roles visually.
 *   **Trend Forecasting:** Employs **Polynomial Regression** to analyze job posting volumes over time and predict future 6-month hiring trends.
 *   **Resume Matching:** Paste your resume or skill set and let the platform rank jobs based on how well they match your experience.
+*   **AI Data Analyst Chat:** An intelligent natural language interface powered by Groq and Llama 3 (or Gemini) to ask complex questions about the job market, trends, and specific companies directly from the dataset.
 
 ## Tech Stack
 *   **Frontend:** Vanilla HTML5, CSS3, JavaScript, Chart.js
 *   **Backend:** Python (Flask)
 *   **Machine Learning:** Scikit-Learn, Pandas, NumPy
+*   **LLM Integration:** Groq API, Llama 3 / Gemini
 *   **Data:** Cleaned and processed LinkedIn job postings dataset
 
 ## The Dataset
@@ -66,7 +68,7 @@ The dataset consists of one primary sheet. Each record in the dataset represents
    ```
 
 ## Project Structure
-*   `/frontend` - Contains the UI, stylesheets, and client-side logic (`app.js`, `ml.js`, `auth.js`).
-*   `/backend` - Contains the server (`app.py`), the Machine Learning engine (`ml_engine.py`), and API endpoints.
+*   `/frontend` - Contains the UI, stylesheets, and client-side logic (`app.js`, `ml.js`, `llm_chat.js`, `auth.js`).
+*   `/backend` - Contains the server (`app.py`), the Machine Learning engine (`ml_engine.py`), the LLM Engine (`llm_engine.py`), and API endpoints.
 *   `/Dataset` - Stores the cleaned `.csv` and insights `.xlsx` files used to train models and serve data.
 *   `clean_data.py` - Script used for initial dataset cleaning and preprocessing.
