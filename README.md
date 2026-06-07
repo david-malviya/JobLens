@@ -11,13 +11,13 @@
 *   **Job Clustering:** Uses **K-Means** and **PCA** (Principal Component Analysis) to group jobs into distinct clusters, helping you discover related roles visually.
 *   **Trend Forecasting:** Employs **Polynomial Regression** to analyze job posting volumes over time and predict future 6-month hiring trends.
 *   **Resume Matching:** Paste your resume or skill set and let the platform rank jobs based on how well they match your experience.
-*   **AI Data Analyst Chat:** An intelligent natural language interface powered by Groq and Llama 3 (or Gemini) to ask complex questions about the job market, trends, and specific companies directly from the dataset.
+*   **AI Data Analyst Chat:** An intelligent natural language interface powered by Groq and Llama 3 to ask complex questions about the job market, trends, and specific companies directly from the dataset.
 
 ## Tech Stack
 *   **Frontend:** Vanilla HTML5, CSS3, JavaScript, Chart.js
 *   **Backend:** Python (Flask)
 *   **Machine Learning:** Scikit-Learn, Pandas, NumPy
-*   **LLM Integration:** Groq API, Llama 3 / Gemini
+*   **LLM Integration:** Groq API, Llama 3
 *   **Data:** Cleaned and processed LinkedIn job postings dataset
 
 ## The Dataset
