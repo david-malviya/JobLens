@@ -39,10 +39,11 @@ if MONGO_URI:
         from pymongo import MongoClient
         mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000)
         mongo_client.admin.command("ping")
-        db = mongo_client.get_database() if mongo_client.get_database().name != 'admin' else mongo_client["joblens"]
+        db = mongo_client["JobLens"]
         db_users_col = db["users"]
         db_users_col.create_index("email", unique=True)
-        print("[INFO] Connected to MongoDB database successfully.")
+        print("[INFO] Connected to MongoDB database (JobLens) successfully.")
+
     except Exception as e:
         print(f"[WARNING] Could not connect to MongoDB ({e}). Falling back to users.json file storage.")
         db_users_col = None

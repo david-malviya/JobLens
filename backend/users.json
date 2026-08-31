@@ -118,5 +118,11 @@
     "email": "atlas_user@example.com",
     "password": "$2b$12$qYyCE9Uk1uuM9XTLy0MUOeeuoyn.A6hJZM.YpyuOLANofP.MCCrU2",
     "created_at": "2026-08-31T09:39:04.096424"
+  },
+  "krishna@gmail.com": {
+    "name": "krishna",
+    "email": "krishna@gmail.com",
+    "password": "$2b$12$xozoWOHeeg5xKAsr9zARb.4nyxLqlmDjLkBzDLFR6tWqGYfJPdAcG",
+    "created_at": "2026-08-31T09:40:43.979582"
   }
 }
