@@ -152,27 +152,30 @@ def create_token(email, name):
 
 
 def token_required(f):
-    """Decorator to protect routes with JWT authentication."""
+    """Decorator to inject user identity if present, allowing guest access."""
     @functools.wraps(f)
     def decorated(*args, **kwargs):
         token = None
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
+            parts = auth_header.split(" ")
+            if len(parts) > 1:
+                t = parts[1].strip()
+                if t and t not in ["null", "undefined", "None"]:
+                    token = t
 
-        if not token:
-            return jsonify({"error": "Authentication token is missing"}), 401
-
-        try:
-            data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            request.user = data
-        except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Token has expired, please login again"}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"error": "Invalid token"}), 401
+        if token:
+            try:
+                data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+                request.user = data
+            except Exception:
+                request.user = None
+        else:
+            request.user = None
 
         return f(*args, **kwargs)
     return decorated
+
 
 
 # ---------------------------------------------------------------------------
