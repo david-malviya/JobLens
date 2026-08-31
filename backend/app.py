@@ -313,11 +313,10 @@ def apply_filters(data):
 
 
 # ---------------------------------------------------------------------------
-# Job Routes (protected — require login)
+# Job Routes (Public access for live web app & demo)
 # ---------------------------------------------------------------------------
 
 @app.route("/api/jobs", methods=["GET"])
-@token_required
 def get_jobs():
     """
     Return paginated, filtered job listings.
@@ -364,7 +363,6 @@ def get_jobs():
 
 
 @app.route("/api/jobs/stats", methods=["GET"])
-@token_required
 def get_stats():
     """Return dashboard-level statistics."""
     return jsonify(
@@ -400,7 +398,6 @@ def get_stats():
 
 
 @app.route("/api/jobs/filters", methods=["GET"])
-@token_required
 def get_filters():
     """Return unique values for each filterable column (for populating dropdowns)."""
     return jsonify(
@@ -432,7 +429,6 @@ def debug_key():
     return jsonify({"key": getattr(joblens_llm, "api_key", "UNKNOWN")})
 
 @app.route("/api/ml/semantic-search", methods=["POST"])
-@token_required
 def ml_semantic_search():
     """NLP-powered semantic job search using TF-IDF + Cosine Similarity."""
     data = request.get_json()
@@ -452,7 +448,6 @@ def ml_semantic_search():
 
 
 @app.route("/api/ml/clusters", methods=["GET"])
-@token_required
 def ml_clusters():
     """Return K-Means cluster assignments + PCA 2D coordinates."""
     data = job_clusterer.get_cluster_data()
@@ -460,7 +455,6 @@ def ml_clusters():
 
 
 @app.route("/api/ml/trends", methods=["GET"])
-@token_required
 def ml_trends():
     """Time-series job posting trends + polynomial regression forecast."""
     role = request.args.get("role", "").strip() or None
@@ -470,7 +464,6 @@ def ml_trends():
 
 
 @app.route("/api/ml/resume-match", methods=["POST"])
-@token_required
 def ml_resume_match():
     """Match resume/skills text against jobs using TF-IDF similarity."""
     data = request.get_json()
@@ -489,13 +482,12 @@ def ml_resume_match():
 
 
 # ---------------------------------------------------------------------------
-# LLM Routes (Gemini-powered chat)
+# LLM Routes (Groq-powered chat)
 # ---------------------------------------------------------------------------
 
 @app.route("/api/llm/chat", methods=["POST"])
-@token_required
 def llm_chat():
-    """Chat with the AI about job data using Gemini."""
+    """Chat with the AI about job data using Groq API."""
     data = request.get_json()
     if not data or not data.get("question"):
         return jsonify({"error": "Question is required"}), 400
@@ -522,13 +514,13 @@ def set_llm_key():
 
 
 @app.route("/api/llm/status", methods=["GET"])
-@token_required
 def llm_status():
     """Check if the LLM engine is configured and ready."""
     return jsonify({
         "ready": getattr(joblens_llm, "client", None) is not None,
         "model": "grok" if getattr(joblens_llm, "client", None) else None,
     })
+
 
 
 # ---------------------------------------------------------------------------
