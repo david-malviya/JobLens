@@ -3,7 +3,8 @@
  * Login, registration, token management, theme toggle.
  */
 
-const API_BASE = "http://127.0.0.1:5000/api";
+const IS_LOCAL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const API_BASE = IS_LOCAL ? "http://127.0.0.1:5000/api" : "https://joblens-backend-x4sx.onrender.com/api";
 
 // ── Theme ──
 function getTheme() { return localStorage.getItem("joblens_theme") || "light"; }
