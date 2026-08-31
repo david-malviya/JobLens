@@ -7,8 +7,9 @@ Contains 4 ML modules:
   4. ResumeJobMatcher — TF-IDF similarity for resume-to-job matching
 """
 
-import numpy as np
-import pandas as pd
+import os
+from pymongo import MongoClient
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import KMeans
@@ -16,8 +17,24 @@ from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
+# Attempt Vector DB connection (MongoDB Atlas)
+MONGO_URI = os.environ.get("MONGO_URI", "")
+vector_col = None
+if MONGO_URI:
+    try:
+        mc = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
+        vdb = mc["JobLens"]
+        if "job_vectors" in vdb.list_collection_names():
+            v_count = vdb["job_vectors"].count_documents({})
+            if v_count > 0:
+                vector_col = vdb["job_vectors"]
+                print(f"[ML] Vector DB connected: {v_count} vector documents stored in MongoDB Atlas 'JobLens.job_vectors'.")
+    except Exception as e:
+        print(f"[ML] Vector DB check fallback to local computation: {e}")
+
 
 class SemanticSearch:
+
     """
     NLP-powered search using TF-IDF vectorization and cosine similarity.
     Unlike keyword matching, this understands semantic relationships:
