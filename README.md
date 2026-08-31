@@ -25,7 +25,8 @@
 *   **Backend:** Python (Flask, Gunicorn)
 *   **Database:** MongoDB Atlas (Cloud Vector Database & User Auth)
 *   **Machine Learning:** Vector Embeddings (500-dim), Cosine Similarity, Scikit-Learn, Pandas, NumPy
-*   **LLM Integration:** Groq API, Llama 3 / Gemini 2.0
+*   **LLM Integration:** Groq API (Llama 3.1 & Llama 3.3)
+
 *   **Dataset:** Cleaned LinkedIn job postings dataset (31,530 records)
 
 
