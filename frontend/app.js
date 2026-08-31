@@ -42,7 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!checkAuth()) return;
 
   // Clear search input to prevent browser credential autofill
-  if ($("searchInput")) $("searchInput").value = "";
+  if ($("searchInput")) {
+    $("searchInput").value = "";
+    setTimeout(() => { if ($("searchInput")) $("searchInput").value = ""; }, 300);
+  }
 
   // User profile
   const user = getUser();
