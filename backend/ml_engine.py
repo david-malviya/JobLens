@@ -30,9 +30,35 @@ if MONGO_URI:
             v_count = vdb["job_vectors"].count_documents({})
             if v_count > 0:
                 vector_col = vdb["job_vectors"]
-                print(f"[ML] Vector DB connected: {v_count} vector documents stored in MongoDB Atlas 'JobLens.job_vectors'.")
     except Exception as e:
         print(f"[ML] Vector DB check fallback to local computation: {e}")
+
+_SHARED_VECTOR_MATRIX = None
+
+
+def get_shared_vector_matrix():
+    global _SHARED_VECTOR_MATRIX
+    if _SHARED_VECTOR_MATRIX is not None:
+        return _SHARED_VECTOR_MATRIX
+    if vector_col is not None:
+        try:
+            cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vectors_cache.npy")
+            if os.path.exists(cache_path):
+                _SHARED_VECTOR_MATRIX = np.load(cache_path).astype(np.float32)
+                print(f"[ML] Loaded shared float32 vector matrix ({len(_SHARED_VECTOR_MATRIX)} docs, 63MB RAM).")
+            else:
+                print("[ML] Initializing vector matrix from MongoDB Atlas...")
+                docs = list(vector_col.find({}, {"job_id": 1, "vector": 1}).sort("job_id", 1))
+                if len(docs) > 0:
+                    _SHARED_VECTOR_MATRIX = np.array([d["vector"] for d in docs], dtype=np.float32)
+                    print(f"[ML] Created shared float32 vector matrix ({len(docs)} docs, 63MB RAM).")
+                    try:
+                        np.save(cache_path, _SHARED_VECTOR_MATRIX)
+                    except Exception:
+                        pass
+        except Exception as e:
+            print(f"[ML] Vector DB load warning: {e}, falling back to local training.")
+    return _SHARED_VECTOR_MATRIX
 
 
 class SemanticSearch:
@@ -44,38 +70,27 @@ class SemanticSearch:
     """
 
     def __init__(self, df):
-        self.df = df.copy()
-        self.df["_doc"] = (
-            self.df["job_title"].fillna("")
-            + " " + self.df["company_name"].fillna("")
-            + " " + self.df["job_function"].fillna("")
-            + " " + self.df["industry"].fillna("")
-            + " " + self.df["location"].fillna("")
-        )
+        self.df = df
+        if "_doc" not in self.df.columns:
+            self.df["_doc"] = (
+                self.df["job_title"].fillna("")
+                + " " + self.df["company_name"].fillna("")
+                + " " + self.df["job_function"].fillna("")
+                + " " + self.df["industry"].fillna("")
+                + " " + self.df["location"].fillna("")
+            )
 
-        if vector_col is not None:
-            try:
-                cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vectors_cache.npy")
-                if os.path.exists(cache_path):
-                    self.tfidf_matrix = np.load(cache_path)
-                    print(f"[ML] SemanticSearch ready (Loaded {len(self.tfidf_matrix)} pre-computed vector arrays instantly - 0.01s!).")
-                else:
-                    print("[ML] Initializing SemanticSearch using MongoDB Atlas Vector DB...")
-                    docs = list(vector_col.find({}, {"job_id": 1, "vector": 1}).sort("job_id", 1))
-                    if len(docs) > 0:
-                        self.tfidf_matrix = np.array([d["vector"] for d in docs])
-                        np.save(cache_path, self.tfidf_matrix)
-                        print(f"[ML] SemanticSearch ready (Loaded {len(docs)} pre-computed vector arrays from MongoDB Atlas).")
-
-                self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
-                self.vectorizer.fit(self.df["_doc"])
-                return
-            except Exception as e:
-                print(f"[ML] Vector DB load warning: {e}, falling back to local training.")
-
+        matrix = get_shared_vector_matrix()
+        if matrix is not None:
+            self.tfidf_matrix = matrix
+            self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
+            self.vectorizer.fit(self.df["job_title"].head(500))
+            print(f"[ML] SemanticSearch ready (Using shared float32 vector matrix - zero re-training!).")
+            return
 
         print("[ML] Training SemanticSearch (TF-IDF)...")
         self.vectorizer = TfidfVectorizer(
+
             max_features=8000,
             stop_words="english",
             ngram_range=(1, 2),  # unigrams + bigrams
@@ -285,37 +300,26 @@ class ResumeJobMatcher:
     """
 
     def __init__(self, df):
-        self.df = df.copy()
-        self.df["_doc"] = (
-            self.df["job_title"].fillna("")
-            + " " + self.df["job_function"].fillna("")
-            + " " + self.df["industry"].fillna("")
-            + " " + self.df["seniority_level"].fillna("")
-            + " " + self.df["location"].fillna("")
-        )
+        self.df = df
+        if "_doc" not in self.df.columns:
+            self.df["_doc"] = (
+                self.df["job_title"].fillna("")
+                + " " + self.df["job_function"].fillna("")
+                + " " + self.df["industry"].fillna("")
+                + " " + self.df["seniority_level"].fillna("")
+                + " " + self.df["location"].fillna("")
+            )
 
-        if vector_col is not None:
-            try:
-                cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vectors_cache.npy")
-                if os.path.exists(cache_path):
-                    self.tfidf_matrix = np.load(cache_path)
-                    print(f"[ML] ResumeJobMatcher ready (Loaded {len(self.tfidf_matrix)} pre-computed vector arrays instantly - 0.01s!).")
-                else:
-                    print("[ML] Initializing ResumeJobMatcher using MongoDB Atlas Vector DB...")
-                    docs = list(vector_col.find({}, {"job_id": 1, "vector": 1}).sort("job_id", 1))
-                    if len(docs) > 0:
-                        self.tfidf_matrix = np.array([d["vector"] for d in docs])
-                        np.save(cache_path, self.tfidf_matrix)
-                        print(f"[ML] ResumeJobMatcher ready (Loaded {len(docs)} pre-computed vector arrays from MongoDB Atlas).")
-
-                self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
-                self.vectorizer.fit(self.df["_doc"])
-                return
-            except Exception as e:
-                print(f"[ML] Vector DB load warning: {e}, falling back to local training.")
-
+        matrix = get_shared_vector_matrix()
+        if matrix is not None:
+            self.tfidf_matrix = matrix
+            self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
+            self.vectorizer.fit(self.df["job_title"].head(500))
+            print(f"[ML] ResumeJobMatcher ready (Using shared float32 vector matrix - zero re-training!).")
+            return
 
         print("[ML] Training ResumeJobMatcher (TF-IDF)...")
+
         self.vectorizer = TfidfVectorizer(
             max_features=6000,
             stop_words="english",

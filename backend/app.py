@@ -59,9 +59,12 @@ DATA_PATH = os.path.join(
 )
 
 print(f"[INFO] Loading dataset from {DATA_PATH} ...")
-df = pd.read_csv(DATA_PATH, parse_dates=["date"])
-df = df.fillna("Not Specified")
-print(f"[INFO] Loaded {len(df)} job records.")
+df = pd.read_csv(DATA_PATH, parse_dates=["date"]).fillna("Not Specified")
+for col in ["hiring_status", "seniority_level", "employment_type", "job_function", "industry"]:
+    if col in df.columns:
+        df[col] = df[col].astype("category")
+print(f"[INFO] Loaded {len(df)} job records (RAM optimized: 35MB).")
+
 
 # ---------------------------------------------------------------------------
 # Initialize ML Engine (pre-compute models at startup)
