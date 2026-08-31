@@ -45,13 +45,17 @@ def get_shared_vector_matrix():
             cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vectors_cache.npy")
             if os.path.exists(cache_path):
                 _SHARED_VECTOR_MATRIX = np.load(cache_path).astype(np.float32)
-                print(f"[ML] Loaded shared float32 vector matrix ({len(_SHARED_VECTOR_MATRIX)} docs, 63MB RAM).")
+                print(f"[ML] Loaded shared float32 vector matrix ({len(_SHARED_VECTOR_MATRIX)} docs, 60MB RAM).")
             else:
-                print("[ML] Initializing vector matrix from MongoDB Atlas...")
-                docs = list(vector_col.find({}, {"job_id": 1, "vector": 1}).sort("job_id", 1))
-                if len(docs) > 0:
-                    _SHARED_VECTOR_MATRIX = np.array([d["vector"] for d in docs], dtype=np.float32)
-                    print(f"[ML] Created shared float32 vector matrix ({len(docs)} docs, 63MB RAM).")
+                print("[ML] Streaming vector matrix from MongoDB Atlas...")
+                v_count = vector_col.count_documents({})
+                if v_count > 0:
+                    _SHARED_VECTOR_MATRIX = np.zeros((v_count, 500), dtype=np.float32)
+                    cursor = vector_col.find({}, {"job_id": 1, "vector": 1}, batch_size=2000).sort("job_id", 1)
+                    for idx, doc in enumerate(cursor):
+                        if "vector" in doc and len(doc["vector"]) == 500 and idx < v_count:
+                            _SHARED_VECTOR_MATRIX[idx] = np.array(doc["vector"], dtype=np.float32)
+                    print(f"[ML] Streamed shared float32 vector matrix ({v_count} docs, 60MB RAM).")
                     try:
                         np.save(cache_path, _SHARED_VECTOR_MATRIX)
                     except Exception:
@@ -73,20 +77,21 @@ class SemanticSearch:
         self.df = df
         if "_doc" not in self.df.columns:
             self.df["_doc"] = (
-                self.df["job_title"].fillna("")
-                + " " + self.df["company_name"].fillna("")
-                + " " + self.df["job_function"].fillna("")
-                + " " + self.df["industry"].fillna("")
-                + " " + self.df["location"].fillna("")
+                self.df["job_title"].astype(str).fillna("")
+                + " " + self.df["company_name"].astype(str).fillna("")
+                + " " + self.df["job_function"].astype(str).fillna("")
+                + " " + self.df["industry"].astype(str).fillna("")
+                + " " + self.df["location"].astype(str).fillna("")
             )
 
         matrix = get_shared_vector_matrix()
         if matrix is not None:
             self.tfidf_matrix = matrix
             self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
-            self.vectorizer.fit(self.df["job_title"].head(500))
+            self.vectorizer.fit(self.df["job_title"].astype(str).head(500))
             print(f"[ML] SemanticSearch ready (Using shared float32 vector matrix - zero re-training!).")
             return
+
 
         print("[ML] Training SemanticSearch (TF-IDF)...")
         self.vectorizer = TfidfVectorizer(
@@ -303,20 +308,21 @@ class ResumeJobMatcher:
         self.df = df
         if "_doc" not in self.df.columns:
             self.df["_doc"] = (
-                self.df["job_title"].fillna("")
-                + " " + self.df["job_function"].fillna("")
-                + " " + self.df["industry"].fillna("")
-                + " " + self.df["seniority_level"].fillna("")
-                + " " + self.df["location"].fillna("")
+                self.df["job_title"].astype(str).fillna("")
+                + " " + self.df["job_function"].astype(str).fillna("")
+                + " " + self.df["industry"].astype(str).fillna("")
+                + " " + self.df["seniority_level"].astype(str).fillna("")
+                + " " + self.df["location"].astype(str).fillna("")
             )
 
         matrix = get_shared_vector_matrix()
         if matrix is not None:
             self.tfidf_matrix = matrix
             self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
-            self.vectorizer.fit(self.df["job_title"].head(500))
+            self.vectorizer.fit(self.df["job_title"].astype(str).head(500))
             print(f"[ML] ResumeJobMatcher ready (Using shared float32 vector matrix - zero re-training!).")
             return
+
 
         print("[ML] Training ResumeJobMatcher (TF-IDF)...")
 
