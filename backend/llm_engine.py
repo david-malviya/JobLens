@@ -233,12 +233,15 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
         user_message += f"USER QUESTION: {question}"
 
         models_to_try = [
+            "groq/compound-mini",
+            "groq/compound",
+            "openai/gpt-oss-120b",
+            "qwen/qwen3.6-27b",
             "llama-3.1-8b-instant",
             "llama-3.3-70b-versatile",
             "llama3-70b-8192",
-            "llama3-8b-8192",
-            "mixtral-8x7b-32768",
         ]
+
 
         last_exception = None
         for model_name in models_to_try:

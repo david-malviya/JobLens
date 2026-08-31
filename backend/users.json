@@ -88,5 +88,11 @@
     "email": "dav@gmail.com",
     "password": "$2b$12$qtxCFesb74Q5UkajRrTc.OnqW/fixLYMgtyTMHMXrbQ3QH7tZvJry",
     "created_at": "2026-08-31T06:03:55.680023"
+  },
+  "test_local@example.com": {
+    "name": "Test User",
+    "email": "test_local@example.com",
+    "password": "$2b$12$Zkxs5kM2maa/eHOTsWHmBOxbIUtuIzewlCzYvC1IKZGFFLU.YtL8q",
+    "created_at": "2026-08-31T08:10:30.091925"
   }
 }
