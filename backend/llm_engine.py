@@ -236,10 +236,8 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
             "groq/compound",
             "openai/gpt-oss-120b",
             "qwen/qwen3.6-27b",
-            "llama-3.1-8b-instant",
-            "llama-3.3-70b-versatile",
-            "llama3-70b-8192",
         ]
+
 
         last_exception = None
         for model_name in models_to_try:
@@ -259,14 +257,13 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
                     "answer": answer,
                     "status": "success",
                     "context_used": "dataset_analysis",
+                    "model": model_name,
                 }
             except Exception as e:
                 print(f"[LLM DEBUG] Model {model_name} failed: {e}")
                 last_exception = e
-                if "model_not_found" in str(e) or "404" in str(e):
-                    continue
-                else:
-                    break
+                continue
+
 
         # If loop finishes with an exception
         e = last_exception or Exception("All Groq models failed")
