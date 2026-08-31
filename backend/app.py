@@ -28,42 +28,26 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "joblens_super_secret_key_2026")
 USERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "users.json")
 
 # ---------------------------------------------------------------------------
-# Load cleaned dataset into memory
+# MongoDB Connection Setup (with local JSON fallback)
 # ---------------------------------------------------------------------------
-DATA_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "Dataset",
-    "linkedin_jobs_cleaned.csv",
-)
+MONGO_URI = os.environ.get("MONGO_URI", "")
+mongo_client = None
+db_users_col = None
 
-print(f"[INFO] Loading dataset from {DATA_PATH} ...")
-df = pd.read_csv(DATA_PATH, parse_dates=["date"])
-df = df.fillna("Not Specified")
-print(f"[INFO] Loaded {len(df)} job records.")
-
-# ---------------------------------------------------------------------------
-# Initialize ML Engine (pre-compute models at startup)
-# ---------------------------------------------------------------------------
-from ml_engine import SemanticSearch, JobClusterer, TrendForecaster, ResumeJobMatcher
-
-semantic_search = SemanticSearch(df)
-job_clusterer = JobClusterer(df, n_clusters=8, sample_size=3000)
-trend_forecaster = TrendForecaster(df)
-resume_matcher = ResumeJobMatcher(df)
-print("[INFO] All ML models initialized.")
-
-# ---------------------------------------------------------------------------
-# Initialize LLM Engine (Gemini)
-# ---------------------------------------------------------------------------
-from llm_engine import JobLensLLM
-
-LLM_API_KEY = os.environ.get("GROQ_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
-joblens_llm = JobLensLLM(df, api_key=LLM_API_KEY, retriever=semantic_search)
+if MONGO_URI:
+    try:
+        from pymongo import MongoClient
+        mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000)
+        mongo_client.admin.command("ping")
+        db = mongo_client.get_database() if mongo_client.get_database().name != 'admin' else mongo_client["joblens"]
+        db_users_col = db["users"]
+        db_users_col.create_index("email", unique=True)
+        print("[INFO] Connected to MongoDB database successfully.")
+    except Exception as e:
+        print(f"[WARNING] Could not connect to MongoDB ({e}). Falling back to users.json file storage.")
+        db_users_col = None
 
 
-# ---------------------------------------------------------------------------
-# User storage helpers (JSON file-based)
-# ---------------------------------------------------------------------------
 def load_users():
     """Load users from the JSON file."""
     if not os.path.exists(USERS_FILE):
@@ -76,6 +60,38 @@ def save_users(users):
     """Save users to the JSON file."""
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, indent=2, ensure_ascii=False)
+
+
+def get_user_by_email(email):
+    """Retrieve user dictionary by email from MongoDB or fallback JSON."""
+    if db_users_col is not None:
+        try:
+            return db_users_col.find_one({"email": email})
+        except Exception as e:
+            print(f"[ERROR] MongoDB query failed: {e}")
+
+    users = load_users()
+    return users.get(email)
+
+
+def save_user_record(user_doc):
+    """Insert or update user record in MongoDB or fallback JSON."""
+    if db_users_col is not None:
+        try:
+            db_users_col.update_one(
+                {"email": user_doc["email"]},
+                {"$set": user_doc},
+                upsert=True
+            )
+            return True
+        except Exception as e:
+            print(f"[ERROR] MongoDB save failed: {e}")
+
+    users = load_users()
+    users[user_doc["email"]] = user_doc
+    save_users(users)
+    return True
+
 
 
 # ---------------------------------------------------------------------------
@@ -139,20 +155,18 @@ def register():
     if not password or len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
-    users = load_users()
-
-    if email in users:
+    if get_user_by_email(email):
         return jsonify({"error": "An account with this email already exists"}), 409
 
     # Hash password and save
     hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-    users[email] = {
+    user_doc = {
         "name": name,
         "email": email,
         "password": hashed,
         "created_at": datetime.datetime.utcnow().isoformat(),
     }
-    save_users(users)
+    save_user_record(user_doc)
 
     token = create_token(email, name)
     return jsonify({
@@ -175,11 +189,11 @@ def login():
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
-    users = load_users()
-    user = users.get(email)
+    user = get_user_by_email(email)
 
     if not user:
         return jsonify({"error": "No account found with this email"}), 404
+
 
     if not bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8")):
         return jsonify({"error": "Incorrect password"}), 401
