@@ -88,9 +88,10 @@ class SemanticSearch:
         if matrix is not None:
             self.tfidf_matrix = matrix
             self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
-            self.vectorizer.fit(self.df["job_title"].astype(str).head(500))
+            self.vectorizer.fit(self.df["_doc"])
             print(f"[ML] SemanticSearch ready (Using shared float32 vector matrix - zero re-training!).")
             return
+
 
 
         print("[ML] Training SemanticSearch (TF-IDF)...")
@@ -320,9 +321,10 @@ class ResumeJobMatcher:
         if matrix is not None:
             self.tfidf_matrix = matrix
             self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
-            self.vectorizer.fit(self.df["job_title"].astype(str).head(500))
+            self.vectorizer.fit(self.df["_doc"])
             print(f"[ML] ResumeJobMatcher ready (Using shared float32 vector matrix - zero re-training!).")
             return
+
 
 
         print("[ML] Training ResumeJobMatcher (TF-IDF)...")
