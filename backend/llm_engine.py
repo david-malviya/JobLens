@@ -271,21 +271,22 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
         e = last_exception or Exception("All Groq models failed")
         print("[LLM ERROR]:", repr(e))
 
-            error_msg = str(e)
-            if "API_KEY" in error_msg.upper() or "PERMISSION" in error_msg.upper() or "INVALID" in error_msg.upper():
-                return {
-                    "answer": "⚠️ Invalid or expired API key. Please check your API key and try again.",
-                    "status": "error",
-                    "context_used": "none",
-                }
-            elif "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg.upper() or "QUOTA" in error_msg.upper():
-                return {
-                    "answer": "⏳ **Rate Limit Reached:** You have exceeded your Groq API rate limit. Please wait a moment and try again.",
-                    "status": "error",
-                    "context_used": "none",
-                }
+        error_msg = str(e)
+        if "API_KEY" in error_msg.upper() or "PERMISSION" in error_msg.upper() or "INVALID" in error_msg.upper():
             return {
-                "answer": f"❌ An error occurred while processing your question: {error_msg}",
+                "answer": "⚠️ Invalid or expired API key. Please check your API key and try again.",
                 "status": "error",
                 "context_used": "none",
             }
+        elif "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg.upper() or "QUOTA" in error_msg.upper():
+            return {
+                "answer": "⏳ **Rate Limit Reached:** You have exceeded your Groq API rate limit. Please wait a moment and try again.",
+                "status": "error",
+                "context_used": "none",
+            }
+        return {
+            "answer": f"❌ An error occurred while processing your question: {error_msg}",
+            "status": "error",
+            "context_used": "none",
+        }
+
