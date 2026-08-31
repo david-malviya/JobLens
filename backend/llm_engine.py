@@ -6,19 +6,24 @@ Retrieves relevant data from the dataset and provides it as context to the LLM.
 
 import os
 import json
-from groq import Groq
 import pandas as pd
+from groq import Groq
+
+try:
+    from google import genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
 
 
 class JobLensLLM:
     """
     LLM-powered Q&A engine for the LinkedIn jobs dataset.
-    Automatically extracts relevant dataset context based on the user's question
-    and sends it to Gemini for an intelligent, data-driven answer.
+    Supports both Groq (Llama/Compound) and Google Gemini APIs seamlessly based on key format.
     """
 
     def __init__(self, df, api_key=None, retriever=None):
-        print("[LLM] Initializing Groq LLM Engine...")
+        print("[LLM] Initializing JobLens LLM Engine...")
         self.df = df.copy()
         self.retriever = retriever
         self.api_key = api_key or os.environ.get("GROQ_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
@@ -27,13 +32,32 @@ class JobLensLLM:
         if not self.api_key:
             print("[LLM] WARNING: No Groq/Gemini API key provided. LLM features will be disabled.")
             self.client = None
+            self.provider = None
             return
 
-        self.client = Groq(api_key=self.api_key)
+        # Auto-detect provider based on key format
+        if self.api_key.startswith("AIza") or (not self.api_key.startswith("gsk_") and GEMINI_AVAILABLE):
+            if GEMINI_AVAILABLE:
+                try:
+                    self.client = genai.Client(api_key=self.api_key)
+                    self.provider = "gemini"
+                    print("[LLM] Google Gemini Engine initialized successfully.")
+                except Exception as e:
+                    print(f"[LLM] Gemini Init Error: {e}, falling back to Groq")
+                    self.client = Groq(api_key=self.api_key)
+                    self.provider = "groq"
+            else:
+                self.client = Groq(api_key=self.api_key)
+                self.provider = "groq"
+        else:
+            self.client = Groq(api_key=self.api_key)
+            self.provider = "groq"
+            print("[LLM] Groq LLM Engine initialized successfully.")
 
         # Pre-compute dataset summary for context
         self._dataset_summary = self._build_dataset_summary()
-        print("[LLM] Groq LLM Engine ready.")
+        print(f"[LLM] JobLens LLM Engine ready (Provider: {self.provider}).")
+
 
     def _build_dataset_summary(self):
         """Build a concise statistical summary of the dataset."""
@@ -232,6 +256,25 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
 
         user_message += f"USER QUESTION: {question}"
 
+        # Handle Gemini provider
+        if self.provider == "gemini":
+            gemini_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+            for model_name in gemini_models:
+                try:
+                    full_prompt = f"{system_prompt}\n\n{user_message}"
+                    response = self.client.models.generate_content(
+                        model=model_name,
+                        contents=full_prompt,
+                    )
+                    return {
+                        "answer": response.text,
+                        "status": "success",
+                        "context_used": "dataset_analysis",
+                    }
+                except Exception as e:
+                    print(f"[LLM DEBUG] Gemini Model {model_name} failed: {e}")
+                    continue
+
         models_to_try = [
             "groq/compound-mini",
             "groq/compound",
@@ -241,7 +284,6 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
             "llama-3.3-70b-versatile",
             "llama3-70b-8192",
         ]
-
 
         last_exception = None
         for model_name in models_to_try:
@@ -262,6 +304,7 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
                     "status": "success",
                     "context_used": "dataset_analysis",
                 }
+
             except Exception as e:
                 print(f"[LLM DEBUG] Model {model_name} failed: {e}")
                 last_exception = e
