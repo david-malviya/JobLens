@@ -8,6 +8,8 @@ Contains 4 ML modules:
 """
 
 import os
+import numpy as np
+import pandas as pd
 from pymongo import MongoClient
 
 from sklearn.feature_extraction.text import TfidfVectorizer
