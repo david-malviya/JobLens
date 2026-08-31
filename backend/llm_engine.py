@@ -1,6 +1,6 @@
 """
-JobLens LLM Engine — Gemini Integration
-Uses Google Gemini API to answer natural language questions about the LinkedIn job dataset.
+JobLens LLM Engine — Groq Integration
+Uses Groq API (Llama 3 / Compound models) to answer natural language questions about the LinkedIn job dataset.
 Retrieves relevant data from the dataset and provides it as context to the LLM.
 """
 
@@ -9,67 +9,31 @@ import json
 import pandas as pd
 from groq import Groq
 
-try:
-    from google import genai
-    GEMINI_AVAILABLE = True
-except ImportError:
-    GEMINI_AVAILABLE = False
-
 
 class JobLensLLM:
     """
     LLM-powered Q&A engine for the LinkedIn jobs dataset.
-    Supports both Groq (Llama/Compound) and Google Gemini APIs seamlessly based on key format.
+    Extracts relevant dataset context based on the user's question
+    and sends it to Groq for an intelligent, data-driven answer.
     """
 
     def __init__(self, df, api_key=None, retriever=None):
-        print("[LLM] Initializing JobLens LLM Engine...")
+        print("[LLM] Initializing Groq LLM Engine...")
         self.df = df.copy()
         self.retriever = retriever
-        
-        self.groq_key = os.environ.get("GROQ_API_KEY", "")
-        self.gemini_key = os.environ.get("GEMINI_API_KEY", "")
-        
-        # Override with explicit api_key if passed
-        passed_key = api_key or ""
-        if passed_key.startswith("AIza"):
-            self.gemini_key = passed_key
-        elif passed_key.startswith("gsk_"):
-            self.groq_key = passed_key
-
-        self.api_key = passed_key or self.groq_key or self.gemini_key
+        self.api_key = api_key or os.environ.get("GROQ_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
         print(f"[DEBUG] Final API Key length: {len(self.api_key)}")
 
         if not self.api_key:
-            print("[LLM] WARNING: No Groq/Gemini API key provided. LLM features will be disabled.")
+            print("[LLM] WARNING: No Groq API key provided. LLM features will be disabled.")
             self.client = None
-            self.provider = None
             return
 
-        # Auto-detect primary provider based on key format
-        if self.api_key.startswith("AIza") or (not self.api_key.startswith("gsk_") and GEMINI_AVAILABLE):
-            if GEMINI_AVAILABLE and self.gemini_key:
-                try:
-                    self.client = genai.Client(api_key=self.gemini_key)
-                    self.provider = "gemini"
-                    print("[LLM] Google Gemini Engine initialized successfully.")
-                except Exception as e:
-                    print(f"[LLM] Gemini Init Error: {e}, falling back to Groq")
-                    self.client = Groq(api_key=self.groq_key)
-                    self.provider = "groq"
-            else:
-                self.client = Groq(api_key=self.groq_key)
-                self.provider = "groq"
-        else:
-            self.client = Groq(api_key=self.groq_key)
-            self.provider = "groq"
-            print("[LLM] Groq LLM Engine initialized successfully.")
+        self.client = Groq(api_key=self.api_key)
 
         # Pre-compute dataset summary for context
         self._dataset_summary = self._build_dataset_summary()
-        print(f"[LLM] JobLens LLM Engine ready (Primary Provider: {self.provider}).")
-
-
+        print("[LLM] Groq LLM Engine ready.")
 
     def _build_dataset_summary(self):
         """Build a concise statistical summary of the dataset."""
@@ -167,7 +131,6 @@ class JobLensLLM:
                 "monthly_job_postings": {str(k): int(v) for k, v in monthly.tail(12).items()},
                 "total_months_covered": len(monthly),
             }
-            # If a role was mentioned, also show trend for that role
             if matched_roles:
                 for keyword in matched_roles[:2]:
                     role_df = self.df[self.df["job_title"].str.contains(keyword, case=False, na=False)]
@@ -190,7 +153,7 @@ class JobLensLLM:
             }
             context_parts.append(f"COMPARISON DATA:\n{json.dumps(comparison_data, indent=2, default=str)}")
 
-        # Sample of raw data (always include a small sample for context)
+        # Sample of raw data
         sample_size = min(10, len(self.df))
         sample = self.df.sample(n=sample_size, random_state=42)[
             ["job_title", "company_name", "location", "hiring_status",
@@ -202,7 +165,7 @@ class JobLensLLM:
 
     def chat(self, question, chat_history=None):
         """
-        Answer a question about the job dataset using Groq (Llama 3).
+        Answer a question about the job dataset using Groq API.
         
         Args:
             question: The user's natural language question
@@ -233,7 +196,7 @@ class JobLensLLM:
             except Exception as e:
                 print(f"[LLM ERROR] Retrieval failed: {e}")
 
-        # Build the system prompt
+        # Build system prompt
         system_prompt = f"""You are JobLens AI — an expert data analyst assistant for a LinkedIn job postings dataset.
 You have access to a dataset of 31,000+ LinkedIn job postings.
 
@@ -262,30 +225,11 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
 
         if chat_history:
             user_message += "PREVIOUS CONVERSATION:\n"
-            for msg in chat_history[-6:]:  # Keep last 6 messages for context
+            for msg in chat_history[-6:]:
                 role = "User" if msg.get("role") == "user" else "Assistant"
                 user_message += f"{role}: {msg.get('content', '')}\n\n"
 
         user_message += f"USER QUESTION: {question}"
-
-        # Handle Gemini provider
-        if self.provider == "gemini":
-            gemini_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
-            for model_name in gemini_models:
-                try:
-                    full_prompt = f"{system_prompt}\n\n{user_message}"
-                    response = self.client.models.generate_content(
-                        model=model_name,
-                        contents=full_prompt,
-                    )
-                    return {
-                        "answer": response.text,
-                        "status": "success",
-                        "context_used": "dataset_analysis",
-                    }
-                except Exception as e:
-                    print(f"[LLM DEBUG] Gemini Model {model_name} failed: {e}")
-                    continue
 
         models_to_try = [
             "groq/compound-mini",
@@ -316,7 +260,6 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
                     "status": "success",
                     "context_used": "dataset_analysis",
                 }
-
             except Exception as e:
                 print(f"[LLM DEBUG] Model {model_name} failed: {e}")
                 last_exception = e
@@ -325,28 +268,9 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
                 else:
                     break
 
-        # If Groq failed, try Gemini as a fallback if Gemini key exists
-        if GEMINI_AVAILABLE and self.gemini_key and self.provider != "gemini":
-            print("[LLM] Groq failed, falling back to Google Gemini...")
-            try:
-                g_client = genai.Client(api_key=self.gemini_key)
-                full_prompt = f"{system_prompt}\n\n{user_message}"
-                response = g_client.models.generate_content(
-                    model="gemini-2.0-flash",
-                    contents=full_prompt,
-                )
-                return {
-                    "answer": response.text,
-                    "status": "success",
-                    "context_used": "dataset_analysis_gemini_fallback",
-                }
-            except Exception as gem_err:
-                print(f"[LLM ERROR] Gemini fallback also failed: {gem_err}")
-
         # If loop finishes with an exception
         e = last_exception or Exception("All Groq models failed")
         print("[LLM ERROR]:", repr(e))
-
 
         error_msg = str(e)
         if "API_KEY" in error_msg.upper() or "PERMISSION" in error_msg.upper() or "INVALID" in error_msg.upper():
@@ -366,4 +290,3 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
             "status": "error",
             "context_used": "none",
         }
-
