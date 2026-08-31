@@ -24,7 +24,7 @@ CORS(app)
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-SECRET_KEY = os.environ.get("SECRET_KEY", "joblens_super_secret_key_2026")
+SECRET_KEY = os.environ.get("SECRET_KEY", "joblens_super_secret_key_production_2026_secure_32bytes")
 USERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "users.json")
 
 # ---------------------------------------------------------------------------

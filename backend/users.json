@@ -94,5 +94,11 @@
     "email": "test_local@example.com",
     "password": "$2b$12$Zkxs5kM2maa/eHOTsWHmBOxbIUtuIzewlCzYvC1IKZGFFLU.YtL8q",
     "created_at": "2026-08-31T08:10:30.091925"
+  },
+  "ramesh@gmail.com": {
+    "name": "Ramesh",
+    "email": "ramesh@gmail.com",
+    "password": "$2b$12$fJIOicxSnkSd2PI0IdEo7e80JA5Oe0kh60PblYjQhtWxxLf21hvDC",
+    "created_at": "2026-08-31T09:23:31.141111"
   }
 }
