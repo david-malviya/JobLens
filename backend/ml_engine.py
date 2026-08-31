@@ -160,9 +160,11 @@ class JobClusterer:
         )
         self.labels = self.kmeans.fit_predict(tfidf_matrix)
 
-        # PCA for 2D visualization
-        self.pca = PCA(n_components=2, random_state=42)
-        self.coords = self.pca.fit_transform(tfidf_matrix.toarray())
+        # TruncatedSVD for 2D visualization (memory-efficient alternative to PCA for sparse text matrices)
+        from sklearn.decomposition import TruncatedSVD
+        self.pca = TruncatedSVD(n_components=2, random_state=42)
+        self.coords = self.pca.fit_transform(tfidf_matrix)
+
 
         # Generate cluster names from top terms
         self.cluster_names = self._name_clusters(tfidf_matrix)

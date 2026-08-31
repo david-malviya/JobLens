@@ -5,6 +5,7 @@ Includes JWT-based authentication with registration and login.
 """
 
 import os
+os.environ["WEB_CONCURRENCY"] = "1"
 import json
 import datetime
 import functools
@@ -80,6 +81,9 @@ from llm_engine import JobLensLLM
 
 LLM_API_KEY = os.environ.get("GROQ_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
 joblens_llm = JobLensLLM(df, api_key=LLM_API_KEY, retriever=semantic_search)
+
+import gc
+gc.collect()
 
 
 
