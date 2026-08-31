@@ -83,13 +83,42 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ── API ──
-async function apiFetch(endpoint) {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  if (res.status === 401) { logout(); return; }
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+async function apiFetch(endpoint, retries = 2) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (res.status === 401) { logout(); return; }
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (retries > 0) {
+      console.log(`[API] Retrying ${endpoint} (${retries} attempts left)...`);
+      showServerWakingBanner();
+      await new Promise(r => setTimeout(r, 3000));
+      return apiFetch(endpoint, retries - 1);
+    }
+    throw err;
+  }
+}
+
+function showServerWakingBanner() {
+  if (document.getElementById("serverWakingNotice")) return;
+  const banner = document.createElement("div");
+  banner.id = "serverWakingNotice";
+  banner.style.cssText = "position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#1e293b;color:#f8fafc;border:1px solid #3b82f6;padding:10px 20px;border-radius:30px;box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:9999;font-size:14px;display:flex;align-items:center;gap:8px;";
+  banner.innerHTML = `<span style="animation:spin 1s linear infinite;display:inline-block">⚡</span> <span>Backend server is spinning up (free tier cold start)... Please wait a few seconds.</span>`;
+  document.body.appendChild(banner);
+}
+
+function hideServerWakingBanner() {
+  const banner = document.getElementById("serverWakingNotice");
+  if (banner) banner.remove();
 }
 
 function buildQuery() {
@@ -110,6 +139,7 @@ function buildQuery() {
 async function loadStats() {
   try {
     const d = await apiFetch("/jobs/stats");
+    hideServerWakingBanner();
     animateNum("statJobs", d.total_jobs);
     animateNum("statHiring", d.actively_hiring);
     animateNum("statCompanies", d.total_companies);
@@ -133,6 +163,7 @@ function fmt(n) { return n.toLocaleString("en-US"); }
 async function loadFilters() {
   try {
     const d = await apiFetch("/jobs/filters");
+    hideServerWakingBanner();
     fillSelect($("filterLocation"), d.locations.slice(0, 100), "Location");
     fillSelect($("filterFunction"), d.job_functions.slice(0, 60), "Function");
     fillSelect($("filterSeniority"), d.seniority_levels, "Seniority");
@@ -151,12 +182,17 @@ async function loadJobs() {
   $("loadingOverlay").classList.add("show");
   try {
     const d = await apiFetch(`/jobs?${buildQuery()}`);
+    hideServerWakingBanner();
     renderJobs(d.jobs);
     renderPag(d.pagination);
     $("resultsCount").innerHTML = `Showing <strong>${d.jobs.length}</strong> of <strong>${fmt(d.pagination.total)}</strong> results`;
   } catch (e) {
     console.error("Jobs:", e);
-    $("jobsGrid").innerHTML = `<div class="empty-state"><h3>Can't reach the server</h3><p>Make sure the Flask backend is running on port 5000.</p></div>`;
+    $("jobsGrid").innerHTML = `<div class="empty-state">
+      <h3>Can't reach backend server</h3>
+      <p style="margin-bottom:12px">The Render free tier instance may be starting up or sleeping.</p>
+      <button onclick="loadJobs(); loadStats(); loadFilters();" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer">🔄 Retry Connection</button>
+    </div>`;
     $("resultsCount").textContent = "Connection error";
   }
   $("loadingOverlay").classList.remove("show");

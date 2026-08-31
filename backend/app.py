@@ -67,26 +67,55 @@ print(f"[INFO] Loaded {len(df)} job records (RAM optimized: 35MB).")
 
 
 # ---------------------------------------------------------------------------
-# Initialize ML Engine (pre-compute models at startup)
+# Lazy ML & LLM Engine Initializers (Defers heavy TF-IDF & model fits until requested)
 # ---------------------------------------------------------------------------
-from ml_engine import SemanticSearch, JobClusterer, TrendForecaster, ResumeJobMatcher
+_semantic_search = None
+_job_clusterer = None
+_trend_forecaster = None
+_resume_matcher = None
+_joblens_llm = None
 
-semantic_search = SemanticSearch(df)
-job_clusterer = JobClusterer(df, n_clusters=8, sample_size=3000)
-trend_forecaster = TrendForecaster(df)
-resume_matcher = ResumeJobMatcher(df)
-print("[INFO] All ML models initialized.")
+def get_semantic_search():
+    global _semantic_search
+    if _semantic_search is None:
+        print("[INFO] Lazy-loading SemanticSearch model...")
+        from ml_engine import SemanticSearch
+        _semantic_search = SemanticSearch(df)
+    return _semantic_search
 
-# ---------------------------------------------------------------------------
-# Initialize LLM Engine (Gemini/Groq)
-# ---------------------------------------------------------------------------
-from llm_engine import JobLensLLM
+def get_job_clusterer():
+    global _job_clusterer
+    if _job_clusterer is None:
+        print("[INFO] Lazy-loading JobClusterer model...")
+        from ml_engine import JobClusterer
+        _job_clusterer = JobClusterer(df, n_clusters=8, sample_size=3000)
+    return _job_clusterer
 
-LLM_API_KEY = os.environ.get("GROQ_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
-joblens_llm = JobLensLLM(df, api_key=LLM_API_KEY, retriever=semantic_search)
+def get_trend_forecaster():
+    global _trend_forecaster
+    if _trend_forecaster is None:
+        print("[INFO] Lazy-loading TrendForecaster model...")
+        from ml_engine import TrendForecaster
+        _trend_forecaster = TrendForecaster(df)
+    return _trend_forecaster
 
-import gc
-gc.collect()
+def get_resume_matcher():
+    global _resume_matcher
+    if _resume_matcher is None:
+        print("[INFO] Lazy-loading ResumeJobMatcher model...")
+        from ml_engine import ResumeJobMatcher
+        _resume_matcher = ResumeJobMatcher(df)
+    return _resume_matcher
+
+def get_joblens_llm():
+    global _joblens_llm
+    if _joblens_llm is None:
+        print("[INFO] Lazy-loading JobLensLLM engine...")
+        from llm_engine import JobLensLLM
+        api_key = os.environ.get("GROQ_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
+        _joblens_llm = JobLensLLM(df, api_key=api_key, retriever=get_semantic_search())
+    return _joblens_llm
+
 
 
 
@@ -429,7 +458,8 @@ def get_filters():
 
 @app.route("/api/debug-key", methods=["GET"])
 def debug_key():
-    return jsonify({"key": getattr(joblens_llm, "api_key", "UNKNOWN")})
+    llm = get_joblens_llm()
+    return jsonify({"key": getattr(llm, "api_key", "UNKNOWN")})
 
 @app.route("/api/ml/semantic-search", methods=["POST"])
 def ml_semantic_search():
@@ -440,7 +470,7 @@ def ml_semantic_search():
 
     query = data["query"].strip()
     top_k = min(50, max(1, int(data.get("top_k", 20))))
-    results = semantic_search.search(query, top_k=top_k)
+    results = get_semantic_search().search(query, top_k=top_k)
 
     return jsonify({
         "query": query,
@@ -453,7 +483,7 @@ def ml_semantic_search():
 @app.route("/api/ml/clusters", methods=["GET"])
 def ml_clusters():
     """Return K-Means cluster assignments + PCA 2D coordinates."""
-    data = job_clusterer.get_cluster_data()
+    data = get_job_clusterer().get_cluster_data()
     return jsonify(data)
 
 
@@ -462,7 +492,7 @@ def ml_trends():
     """Time-series job posting trends + polynomial regression forecast."""
     role = request.args.get("role", "").strip() or None
     months_ahead = min(12, max(1, int(request.args.get("months", 6))))
-    data = trend_forecaster.get_trends(role=role, months_ahead=months_ahead)
+    data = get_trend_forecaster().get_trends(role=role, months_ahead=months_ahead)
     return jsonify(data)
 
 
@@ -475,7 +505,7 @@ def ml_resume_match():
 
     resume_text = data["resume_text"].strip()
     top_k = min(30, max(1, int(data.get("top_k", 15))))
-    results = resume_matcher.match(resume_text, top_k=top_k)
+    results = get_resume_matcher().match(resume_text, top_k=top_k)
 
     return jsonify({
         "results": results,
@@ -498,7 +528,7 @@ def llm_chat():
     question = data["question"].strip()
     chat_history = data.get("history", [])
 
-    result = joblens_llm.chat(question, chat_history=chat_history)
+    result = get_joblens_llm().chat(question, chat_history=chat_history)
     return jsonify(result)
 
 
@@ -506,22 +536,24 @@ def llm_chat():
 @token_required
 def set_llm_key():
     """Set or update the Gemini API key at runtime."""
-    global joblens_llm
+    global _joblens_llm
     data = request.get_json()
     if not data or not data.get("api_key"):
         return jsonify({"error": "api_key is required"}), 400
 
     api_key = data["api_key"].strip()
-    joblens_llm = JobLensLLM(df, api_key=api_key, retriever=semantic_search)
+    from llm_engine import JobLensLLM
+    _joblens_llm = JobLensLLM(df, api_key=api_key, retriever=get_semantic_search())
     return jsonify({"message": "API key updated and LLM re-initialized", "status": "success"})
 
 
 @app.route("/api/llm/status", methods=["GET"])
 def llm_status():
     """Check if the LLM engine is configured and ready."""
+    llm = get_joblens_llm()
     return jsonify({
-        "ready": getattr(joblens_llm, "client", None) is not None,
-        "model": "grok" if getattr(joblens_llm, "client", None) else None,
+        "ready": getattr(llm, "client", None) is not None,
+        "model": "grok" if getattr(llm, "client", None) else None,
     })
 
 

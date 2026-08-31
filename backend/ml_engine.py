@@ -20,46 +20,38 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
 # Attempt Vector DB connection (MongoDB Atlas)
-MONGO_URI = os.environ.get("MONGO_URI", "")
-vector_col = None
-if MONGO_URI:
-    try:
-        mc = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
-        vdb = mc["JobLens"]
-        if "job_vectors" in vdb.list_collection_names():
-            v_count = vdb["job_vectors"].count_documents({})
-            if v_count > 0:
-                vector_col = vdb["job_vectors"]
-    except Exception as e:
-        print(f"[ML] Vector DB check fallback to local computation: {e}")
-
 _SHARED_VECTOR_MATRIX = None
-
 
 def get_shared_vector_matrix():
     global _SHARED_VECTOR_MATRIX
     if _SHARED_VECTOR_MATRIX is not None:
         return _SHARED_VECTOR_MATRIX
-    if vector_col is not None:
+    
+    MONGO_URI = os.environ.get("MONGO_URI", "")
+    if MONGO_URI:
         try:
-            cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vectors_cache.npy")
-            if os.path.exists(cache_path):
-                _SHARED_VECTOR_MATRIX = np.load(cache_path).astype(np.float32)
-                print(f"[ML] Loaded shared float32 vector matrix ({len(_SHARED_VECTOR_MATRIX)} docs, 60MB RAM).")
-            else:
-                print("[ML] Streaming vector matrix from MongoDB Atlas...")
-                v_count = vector_col.count_documents({})
-                if v_count > 0:
-                    _SHARED_VECTOR_MATRIX = np.zeros((v_count, 500), dtype=np.float32)
-                    cursor = vector_col.find({}, {"job_id": 1, "vector": 1}, batch_size=2000).sort("job_id", 1)
-                    for idx, doc in enumerate(cursor):
-                        if "vector" in doc and len(doc["vector"]) == 500 and idx < v_count:
-                            _SHARED_VECTOR_MATRIX[idx] = np.array(doc["vector"], dtype=np.float32)
-                    print(f"[ML] Streamed shared float32 vector matrix ({v_count} docs, 60MB RAM).")
-                    try:
-                        np.save(cache_path, _SHARED_VECTOR_MATRIX)
-                    except Exception:
-                        pass
+            mc = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
+            vdb = mc["JobLens"]
+            if "job_vectors" in vdb.list_collection_names():
+                vector_col = vdb["job_vectors"]
+                cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vectors_cache.npy")
+                if os.path.exists(cache_path):
+                    _SHARED_VECTOR_MATRIX = np.load(cache_path).astype(np.float32)
+                    print(f"[ML] Loaded shared float32 vector matrix ({len(_SHARED_VECTOR_MATRIX)} docs, 60MB RAM).")
+                else:
+                    print("[ML] Streaming vector matrix from MongoDB Atlas...")
+                    v_count = vector_col.count_documents({})
+                    if v_count > 0:
+                        _SHARED_VECTOR_MATRIX = np.zeros((v_count, 500), dtype=np.float32)
+                        cursor = vector_col.find({}, {"job_id": 1, "vector": 1}, batch_size=2000).sort("job_id", 1)
+                        for idx, doc in enumerate(cursor):
+                            if "vector" in doc and len(doc["vector"]) == 500 and idx < v_count:
+                                _SHARED_VECTOR_MATRIX[idx] = np.array(doc["vector"], dtype=np.float32)
+                        print(f"[ML] Streamed shared float32 vector matrix ({v_count} docs, 60MB RAM).")
+                        try:
+                            np.save(cache_path, _SHARED_VECTOR_MATRIX)
+                        except Exception:
+                            pass
         except Exception as e:
             print(f"[ML] Vector DB load warning: {e}, falling back to local training.")
     return _SHARED_VECTOR_MATRIX
