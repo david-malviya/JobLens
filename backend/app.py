@@ -57,7 +57,7 @@ print("[INFO] All ML models initialized.")
 # ---------------------------------------------------------------------------
 from llm_engine import JobLensLLM
 
-LLM_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+LLM_API_KEY = os.environ.get("GROQ_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
 joblens_llm = JobLensLLM(df, api_key=LLM_API_KEY, retriever=semantic_search)
 
 
