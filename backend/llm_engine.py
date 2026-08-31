@@ -232,25 +232,45 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
 
         user_message += f"USER QUESTION: {question}"
 
-        try:
-            response = self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ],
-                temperature=0.7,
-                max_tokens=2048,
-            )
-            answer = response.choices[0].message.content
+        models_to_try = [
+            "llama-3.1-8b-instant",
+            "llama-3.3-70b-versatile",
+            "llama3-70b-8192",
+            "llama3-8b-8192",
+            "mixtral-8x7b-32768",
+        ]
 
-            return {
-                "answer": answer,
-                "status": "success",
-                "context_used": "dataset_analysis",
-            }
-        except Exception as e:
-            print("[LLM ERROR]:", repr(e))
+        last_exception = None
+        for model_name in models_to_try:
+            try:
+                response = self.client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2048,
+                )
+                answer = response.choices[0].message.content
+
+                return {
+                    "answer": answer,
+                    "status": "success",
+                    "context_used": "dataset_analysis",
+                }
+            except Exception as e:
+                print(f"[LLM DEBUG] Model {model_name} failed: {e}")
+                last_exception = e
+                if "model_not_found" in str(e) or "404" in str(e):
+                    continue
+                else:
+                    break
+
+        # If loop finishes with an exception
+        e = last_exception or Exception("All Groq models failed")
+        print("[LLM ERROR]:", repr(e))
+
             error_msg = str(e)
             if "API_KEY" in error_msg.upper() or "PERMISSION" in error_msg.upper() or "INVALID" in error_msg.upper():
                 return {
