@@ -106,5 +106,17 @@
     "email": "rames@gmail.com",
     "password": "$2b$12$VdcnccgeKaoibi3z1ODqG.c1/P8WLGnUg3T5QcsQkZcj6SesJ7bGW",
     "created_at": "2026-08-31T09:26:19.457875"
+  },
+  "kriti@gmail.com": {
+    "name": "kriti",
+    "email": "kriti@gmail.com",
+    "password": "$2b$12$pK3H1..frpKVQd.rScwxPuDiHxzNTvlqwxiKs4Cj/PxcPQjSzHTMa",
+    "created_at": "2026-08-31T09:37:23.418154"
+  },
+  "atlas_user@example.com": {
+    "name": "MongoDB Test User",
+    "email": "atlas_user@example.com",
+    "password": "$2b$12$qYyCE9Uk1uuM9XTLy0MUOeeuoyn.A6hJZM.YpyuOLANofP.MCCrU2",
+    "created_at": "2026-08-31T09:39:04.096424"
   }
 }

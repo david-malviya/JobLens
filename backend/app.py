@@ -112,14 +112,15 @@ def save_user_record(user_doc):
     """Insert or update user record in MongoDB or fallback JSON."""
     if db_users_col is not None:
         try:
-            db_users_col.update_one(
+            db_users_col.replace_one(
                 {"email": user_doc["email"]},
-                {"$set": user_doc},
+                user_doc,
                 upsert=True
             )
             return True
         except Exception as e:
             print(f"[ERROR] MongoDB save failed: {e}")
+
 
     users = load_users()
     users[user_doc["email"]] = user_doc
