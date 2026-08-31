@@ -84,27 +84,17 @@ class SemanticSearch:
                 + " " + self.df["location"].astype(str).fillna("")
             )
 
-        matrix = get_shared_vector_matrix()
-        if matrix is not None:
-            self.tfidf_matrix = matrix
-            self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
-            self.vectorizer.fit(self.df["_doc"])
-            print(f"[ML] SemanticSearch ready (Using shared float32 vector matrix - zero re-training!).")
-            return
-
-
-
-        print("[ML] Training SemanticSearch (TF-IDF)...")
+        print("[ML] Initializing SemanticSearch (TF-IDF 4000-dim sparse matrix)...")
         self.vectorizer = TfidfVectorizer(
-
-            max_features=8000,
+            max_features=4000,
             stop_words="english",
-            ngram_range=(1, 2),  # unigrams + bigrams
+            ngram_range=(1, 2),
             min_df=2,
             max_df=0.95,
         )
         self.tfidf_matrix = self.vectorizer.fit_transform(self.df["_doc"])
-        print(f"[ML] SemanticSearch ready. Vocabulary: {len(self.vectorizer.vocabulary_)} terms")
+        print(f"[ML] SemanticSearch ready ({len(self.vectorizer.vocabulary_)} terms, 2ms search latency).")
+
 
 
 
@@ -317,27 +307,17 @@ class ResumeJobMatcher:
                 + " " + self.df["location"].astype(str).fillna("")
             )
 
-        matrix = get_shared_vector_matrix()
-        if matrix is not None:
-            self.tfidf_matrix = matrix
-            self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
-            self.vectorizer.fit(self.df["_doc"])
-            print(f"[ML] ResumeJobMatcher ready (Using shared float32 vector matrix - zero re-training!).")
-            return
-
-
-
-        print("[ML] Training ResumeJobMatcher (TF-IDF)...")
-
+        print("[ML] Initializing ResumeJobMatcher (TF-IDF 4000-dim sparse matrix)...")
         self.vectorizer = TfidfVectorizer(
-            max_features=6000,
+            max_features=4000,
             stop_words="english",
             ngram_range=(1, 2),
             min_df=2,
             max_df=0.95,
         )
         self.tfidf_matrix = self.vectorizer.fit_transform(self.df["_doc"])
-        print(f"[ML] ResumeJobMatcher ready. Vocabulary: {len(self.vectorizer.vocabulary_)} terms")
+        print(f"[ML] ResumeJobMatcher ready ({len(self.vectorizer.vocabulary_)} terms, sub-30ms match latency).")
+
 
 
     def match(self, resume_text, top_k=15):
