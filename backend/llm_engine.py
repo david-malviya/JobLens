@@ -250,7 +250,9 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
                     ],
                     temperature=0.7,
                     max_tokens=2048,
+                    timeout=15.0,
                 )
+
                 answer = response.choices[0].message.content
 
                 return {
