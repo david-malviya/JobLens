@@ -5,7 +5,7 @@
  */
 
 console.log("[ML.js] AI/ML Insights module loaded");
-const IS_LOCAL_ML = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const IS_LOCAL_ML = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" || window.location.protocol === "file:";
 const ML_BASE = IS_LOCAL_ML ? "http://127.0.0.1:5000/api/ml" : "https://joblens-backend-x4sx.onrender.com/api/ml";
 
 function mlToken() { return localStorage.getItem("joblens_token"); }
