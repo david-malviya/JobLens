@@ -156,10 +156,11 @@ class JobClusterer:
 
         # Build document features
         docs = (
-            self.df["job_title"].fillna("")
-            + " " + self.df["job_function"].fillna("")
-            + " " + self.df["industry"].fillna("")
+            self.df["job_title"].astype(str).fillna("")
+            + " " + self.df["job_function"].astype(str).fillna("")
+            + " " + self.df["industry"].astype(str).fillna("")
         )
+
 
         # TF-IDF vectorization
         self.vectorizer = TfidfVectorizer(
