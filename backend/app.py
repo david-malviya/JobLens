@@ -47,6 +47,40 @@ if MONGO_URI:
         print(f"[WARNING] Could not connect to MongoDB ({e}). Falling back to users.json file storage.")
         db_users_col = None
 
+# ---------------------------------------------------------------------------
+# Load cleaned dataset into memory
+# ---------------------------------------------------------------------------
+DATA_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "Dataset",
+    "linkedin_jobs_cleaned.csv",
+)
+
+print(f"[INFO] Loading dataset from {DATA_PATH} ...")
+df = pd.read_csv(DATA_PATH, parse_dates=["date"])
+df = df.fillna("Not Specified")
+print(f"[INFO] Loaded {len(df)} job records.")
+
+# ---------------------------------------------------------------------------
+# Initialize ML Engine (pre-compute models at startup)
+# ---------------------------------------------------------------------------
+from ml_engine import SemanticSearch, JobClusterer, TrendForecaster, ResumeJobMatcher
+
+semantic_search = SemanticSearch(df)
+job_clusterer = JobClusterer(df, n_clusters=8, sample_size=3000)
+trend_forecaster = TrendForecaster(df)
+resume_matcher = ResumeJobMatcher(df)
+print("[INFO] All ML models initialized.")
+
+# ---------------------------------------------------------------------------
+# Initialize LLM Engine (Gemini/Groq)
+# ---------------------------------------------------------------------------
+from llm_engine import JobLensLLM
+
+LLM_API_KEY = os.environ.get("GROQ_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
+joblens_llm = JobLensLLM(df, api_key=LLM_API_KEY, retriever=semantic_search)
+
+
 
 def load_users():
     """Load users from the JSON file."""
