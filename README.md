@@ -1,8 +1,14 @@
 # JobLens — LinkedIn Job Insights Platform
 
-![JobLens Banner](https://img.shields.io/badge/AI--Powered-Job%20Insights-blue?style=for-the-badge)
+![AI Powered](https://img.shields.io/badge/AI--Powered-Job%20Insights-blue?style=for-the-badge)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-success?style=for-the-badge&logo=vercel)](https://job-lens-5oij.vercel.app/)
+[![API Status](https://img.shields.io/badge/Backend%20API-Render-informational?style=for-the-badge&logo=render)](https://joblens-backend-x4sx.onrender.com/api/jobs/filters)
+
+> 🚀 **Live Demo:** [https://job-lens-5oij.vercel.app/](https://job-lens-5oij.vercel.app/)  
+> ⚡ **Live Backend API:** [https://joblens-backend-x4sx.onrender.com](https://joblens-backend-x4sx.onrender.com)
 
 ## Overview
+
 **JobLens** is a full-stack job discovery platform designed to analyze and explore over 31,000 LinkedIn job postings. It goes beyond simple keyword searches by integrating machine learning models for semantic search, unsupervised job clustering, market trend forecasting, and direct resume-to-job matching.
 
 ## Features
