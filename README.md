@@ -13,18 +13,21 @@
 
 ## Features
 *   **Smart Filtering:** Browse thousands of jobs with dynamic filters for Location, Function, Seniority, Employment Type, and Hiring Status.
-*   **Semantic Search:** Powered by **TF-IDF** and **Cosine Similarity**, find jobs by their underlying meaning and context rather than strict keyword matches.
-*   **Job Clustering:** Uses **K-Means** and **PCA** (Principal Component Analysis) to group jobs into distinct clusters, helping you discover related roles visually.
+*   **Vector Search & Semantic Match:** Powered by pre-computed **500-dimensional vector embeddings** stored in **MongoDB Atlas Vector DB**, performing sub-30ms Cosine Similarity search.
+*   **Job Clustering:** Uses **K-Means** and **TruncatedSVD** (Principal Component Analysis) to group jobs into 8 distinct visual clusters on an interactive 2D scatter chart.
 *   **Trend Forecasting:** Employs **Polynomial Regression** to analyze job posting volumes over time and predict future 6-month hiring trends.
-*   **Resume Matching:** Paste your resume or skill set and let the platform rank jobs based on how well they match your experience.
-*   **AI Data Analyst Chat:** An intelligent natural language interface powered by Groq and Llama 3 to ask complex questions about the job market, trends, and specific companies directly from the dataset.
+*   **Resume Matching:** Rank job postings against your resume experience using pre-computed vector space embeddings.
+*   **AI Data Analyst Chat:** Natural language AI assistant powered by Groq & Llama 3 to answer complex dataset questions.
+*   **User Authentication:** Enterprise MongoDB Atlas database storage for secure user registration and login.
 
 ## Tech Stack
 *   **Frontend:** Vanilla HTML5, CSS3, JavaScript, Chart.js
-*   **Backend:** Python (Flask)
-*   **Machine Learning:** Scikit-Learn, Pandas, NumPy
-*   **LLM Integration:** Groq API, Llama 3
-*   **Data:** Cleaned and processed LinkedIn job postings dataset
+*   **Backend:** Python (Flask, Gunicorn)
+*   **Database:** MongoDB Atlas (Cloud Vector Database & User Auth)
+*   **Machine Learning:** Vector Embeddings (500-dim), Cosine Similarity, Scikit-Learn, Pandas, NumPy
+*   **LLM Integration:** Groq API, Llama 3 / Gemini 2.0
+*   **Dataset:** Cleaned LinkedIn job postings dataset (31,530 records)
+
 
 ## The Dataset
 The dataset consists of one primary sheet. Each record in the dataset represents a single job posting, and the attributes captured include:
