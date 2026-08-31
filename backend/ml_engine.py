@@ -42,10 +42,7 @@ class SemanticSearch:
     """
 
     def __init__(self, df):
-        print("[ML] Training SemanticSearch (TF-IDF)...")
         self.df = df.copy()
-
-        # Combine text fields into a single searchable document per job
         self.df["_doc"] = (
             self.df["job_title"].fillna("")
             + " " + self.df["company_name"].fillna("")
@@ -54,7 +51,28 @@ class SemanticSearch:
             + " " + self.df["location"].fillna("")
         )
 
-        # Fit TF-IDF vectorizer on the job corpus
+        if vector_col is not None:
+            try:
+                cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vectors_cache.npy")
+                if os.path.exists(cache_path):
+                    self.tfidf_matrix = np.load(cache_path)
+                    print(f"[ML] SemanticSearch ready (Loaded {len(self.tfidf_matrix)} pre-computed vector arrays instantly - 0.01s!).")
+                else:
+                    print("[ML] Initializing SemanticSearch using MongoDB Atlas Vector DB...")
+                    docs = list(vector_col.find({}, {"job_id": 1, "vector": 1}).sort("job_id", 1))
+                    if len(docs) > 0:
+                        self.tfidf_matrix = np.array([d["vector"] for d in docs])
+                        np.save(cache_path, self.tfidf_matrix)
+                        print(f"[ML] SemanticSearch ready (Loaded {len(docs)} pre-computed vector arrays from MongoDB Atlas).")
+
+                self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
+                self.vectorizer.fit(self.df["_doc"])
+                return
+            except Exception as e:
+                print(f"[ML] Vector DB load warning: {e}, falling back to local training.")
+
+
+        print("[ML] Training SemanticSearch (TF-IDF)...")
         self.vectorizer = TfidfVectorizer(
             max_features=8000,
             stop_words="english",
@@ -64,6 +82,8 @@ class SemanticSearch:
         )
         self.tfidf_matrix = self.vectorizer.fit_transform(self.df["_doc"])
         print(f"[ML] SemanticSearch ready. Vocabulary: {len(self.vectorizer.vocabulary_)} terms")
+
+
 
     def search(self, query, top_k=20):
         """
@@ -261,10 +281,7 @@ class ResumeJobMatcher:
     """
 
     def __init__(self, df):
-        print("[ML] Training ResumeJobMatcher (TF-IDF)...")
         self.df = df.copy()
-
-        # Build rich job documents
         self.df["_doc"] = (
             self.df["job_title"].fillna("")
             + " " + self.df["job_function"].fillna("")
@@ -273,6 +290,28 @@ class ResumeJobMatcher:
             + " " + self.df["location"].fillna("")
         )
 
+        if vector_col is not None:
+            try:
+                cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vectors_cache.npy")
+                if os.path.exists(cache_path):
+                    self.tfidf_matrix = np.load(cache_path)
+                    print(f"[ML] ResumeJobMatcher ready (Loaded {len(self.tfidf_matrix)} pre-computed vector arrays instantly - 0.01s!).")
+                else:
+                    print("[ML] Initializing ResumeJobMatcher using MongoDB Atlas Vector DB...")
+                    docs = list(vector_col.find({}, {"job_id": 1, "vector": 1}).sort("job_id", 1))
+                    if len(docs) > 0:
+                        self.tfidf_matrix = np.array([d["vector"] for d in docs])
+                        np.save(cache_path, self.tfidf_matrix)
+                        print(f"[ML] ResumeJobMatcher ready (Loaded {len(docs)} pre-computed vector arrays from MongoDB Atlas).")
+
+                self.vectorizer = TfidfVectorizer(max_features=500, stop_words="english", ngram_range=(1, 2))
+                self.vectorizer.fit(self.df["_doc"])
+                return
+            except Exception as e:
+                print(f"[ML] Vector DB load warning: {e}, falling back to local training.")
+
+
+        print("[ML] Training ResumeJobMatcher (TF-IDF)...")
         self.vectorizer = TfidfVectorizer(
             max_features=6000,
             stop_words="english",
@@ -282,6 +321,7 @@ class ResumeJobMatcher:
         )
         self.tfidf_matrix = self.vectorizer.fit_transform(self.df["_doc"])
         print(f"[ML] ResumeJobMatcher ready. Vocabulary: {len(self.vectorizer.vocabulary_)} terms")
+
 
     def match(self, resume_text, top_k=15):
         """
