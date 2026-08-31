@@ -26,7 +26,18 @@ class JobLensLLM:
         print("[LLM] Initializing JobLens LLM Engine...")
         self.df = df.copy()
         self.retriever = retriever
-        self.api_key = api_key or os.environ.get("GROQ_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
+        
+        self.groq_key = os.environ.get("GROQ_API_KEY", "")
+        self.gemini_key = os.environ.get("GEMINI_API_KEY", "")
+        
+        # Override with explicit api_key if passed
+        passed_key = api_key or ""
+        if passed_key.startswith("AIza"):
+            self.gemini_key = passed_key
+        elif passed_key.startswith("gsk_"):
+            self.groq_key = passed_key
+
+        self.api_key = passed_key or self.groq_key or self.gemini_key
         print(f"[DEBUG] Final API Key length: {len(self.api_key)}")
 
         if not self.api_key:
@@ -35,28 +46,29 @@ class JobLensLLM:
             self.provider = None
             return
 
-        # Auto-detect provider based on key format
+        # Auto-detect primary provider based on key format
         if self.api_key.startswith("AIza") or (not self.api_key.startswith("gsk_") and GEMINI_AVAILABLE):
-            if GEMINI_AVAILABLE:
+            if GEMINI_AVAILABLE and self.gemini_key:
                 try:
-                    self.client = genai.Client(api_key=self.api_key)
+                    self.client = genai.Client(api_key=self.gemini_key)
                     self.provider = "gemini"
                     print("[LLM] Google Gemini Engine initialized successfully.")
                 except Exception as e:
                     print(f"[LLM] Gemini Init Error: {e}, falling back to Groq")
-                    self.client = Groq(api_key=self.api_key)
+                    self.client = Groq(api_key=self.groq_key)
                     self.provider = "groq"
             else:
-                self.client = Groq(api_key=self.api_key)
+                self.client = Groq(api_key=self.groq_key)
                 self.provider = "groq"
         else:
-            self.client = Groq(api_key=self.api_key)
+            self.client = Groq(api_key=self.groq_key)
             self.provider = "groq"
             print("[LLM] Groq LLM Engine initialized successfully.")
 
         # Pre-compute dataset summary for context
         self._dataset_summary = self._build_dataset_summary()
-        print(f"[LLM] JobLens LLM Engine ready (Provider: {self.provider}).")
+        print(f"[LLM] JobLens LLM Engine ready (Primary Provider: {self.provider}).")
+
 
 
     def _build_dataset_summary(self):
@@ -313,9 +325,28 @@ IMPORTANT: Base your answers strictly on the context provided. Do not make up da
                 else:
                     break
 
+        # If Groq failed, try Gemini as a fallback if Gemini key exists
+        if GEMINI_AVAILABLE and self.gemini_key and self.provider != "gemini":
+            print("[LLM] Groq failed, falling back to Google Gemini...")
+            try:
+                g_client = genai.Client(api_key=self.gemini_key)
+                full_prompt = f"{system_prompt}\n\n{user_message}"
+                response = g_client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=full_prompt,
+                )
+                return {
+                    "answer": response.text,
+                    "status": "success",
+                    "context_used": "dataset_analysis_gemini_fallback",
+                }
+            except Exception as gem_err:
+                print(f"[LLM ERROR] Gemini fallback also failed: {gem_err}")
+
         # If loop finishes with an exception
         e = last_exception or Exception("All Groq models failed")
         print("[LLM ERROR]:", repr(e))
+
 
         error_msg = str(e)
         if "API_KEY" in error_msg.upper() or "PERMISSION" in error_msg.upper() or "INVALID" in error_msg.upper():
